@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin · Marylin Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --white: #f8f6f2; --off: #ede9e2; --canvas: #ddd8cf; --black: #111110;
+      --ink: #2a2826; --muted: #888480; --blue: #1f4e8c; --orange: #e05a1c;
+      --air: #dce8f8; --green: #2d7a45; --red: #c0392b;
+      --sidebar: #111110; --sidebar-w: 240px;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--off); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+    /* ── LOGIN SCREEN ── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 9000;
+      background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      width: 360px;
+      background: #1a1917;
+      border: 1px solid #333;
+      padding: 2.5rem;
+    }
+    .login-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.1em; color: #fff; margin-bottom: 0.3rem; }
+    .login-logo span { color: var(--orange); }
+    .login-sub { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; margin-bottom: 2rem; }
+    .login-box label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: #666; display: block; margin-bottom: 0.35rem; }
+    .login-box input { width: 100%; background: #111; border: 1px solid #333; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.7rem 1rem; outline: none; border-radius: 2px; margin-bottom: 1rem; transition: border-color 0.2s; }
+    .login-box input:focus { border-color: var(--orange); }
+    .login-btn { width: 100%; background: var(--orange); color: #fff; border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.85rem; cursor: pointer; border-radius: 2px; transition: opacity 0.2s; }
+    .login-btn:hover { opacity: 0.85; }
+    .login-err { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--red); letter-spacing: 0.06em; margin-top: 0.8rem; display: none; }
+    .login-hint { font-family: 'DM Mono', monospace; font-size: 0.58rem; color: #444; letter-spacing: 0.06em; margin-top: 1.2rem; line-height: 1.8; }
+
+    /* ── LAYOUT ── */
+    #app { display: none; min-height: 100vh; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w); background: var(--sidebar); z-index: 100;
+      display: flex; flex-direction: column;
+    }
+    .sb-logo { padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid #222; }
+    .sb-logo .logo-txt { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; color: #fff; }
+    .sb-logo .logo-txt span { color: var(--orange); }
+    .sb-logo .logo-sub { font-family: 'DM Mono', monospace; font-size: 0.55rem; letter-spacing: 0.2em; color: #555; text-transform: uppercase; margin-top: 0.1rem; }
+    .sb-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+    .sb-section { font-family: 'DM Mono', monospace; font-size: 0.55rem; letter-spacing: 0.22em; text-transform: uppercase; color: #444; padding: 1rem 1.5rem 0.4rem; }
+    .sb-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.65rem 1.5rem; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em; color: #888; cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; }
+    .sb-item:hover { color: #fff; background: #1a1917; }
+    .sb-item.active { color: #fff; background: #1a1917; border-left-color: var(--orange); }
+    .sb-item .ico { font-size: 1rem; }
+    .sb-bottom { padding: 1rem 1.5rem; border-top: 1px solid #222; }
+    .sb-logout { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: #555; cursor: pointer; transition: color 0.2s; background: none; border: none; width: 100%; text-align: left; padding: 0.4rem 0; }
+    .sb-logout:hover { color: var(--red); }
+
+    .main { margin-left: var(--sidebar-w); min-height: 100vh; padding: 2.5rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── PAGE HEADERS ── */
+    .page-head { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--canvas); display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .page-head h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.06em; color: var(--black); line-height: 1; }
+    .page-head h1 em { color: var(--orange); font-style: normal; }
+    .page-head p { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; margin-top: 0.3rem; }
+
+    /* ── BUTTONS ── */
+    .btn { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.65rem 1.4rem; border-radius: 2px; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { background: var(--orange); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--black); border: 1px solid var(--canvas); }
+    .btn-ghost:hover { border-color: var(--black); }
+    .btn-sm { padding: 0.38rem 0.8rem; font-size: 0.58rem; }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-orange:hover { opacity: 0.85; }
+
+    /* ── STAT CARDS ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+    .stat { background: var(--white); border: 1px solid var(--canvas); padding: 1.3rem 1.5rem; border-radius: 2px; }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 0.04em; color: var(--black); line-height: 1; }
+    .stat-num.orange { color: var(--orange); }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
+
+    /* ── CARDS / PANELS ── */
+    .panel { background: var(--white); border: 1px solid var(--canvas); border-radius: 2px; margin-bottom: 2rem; }
+    .panel-head { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--canvas); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .panel-head h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.08em; color: var(--black); }
+    .panel-body { padding: 1.5rem; }
+
+    /* ── CATEGORY TABLE ── */
+    .cat-table { width: 100%; border-collapse: collapse; }
+    .cat-table th { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--canvas); }
+    .cat-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--off); font-size: 0.88rem; color: var(--ink); vertical-align: middle; }
+    .cat-table tr:last-child td { border-bottom: none; }
+    .cat-table tr:hover td { background: var(--off); }
+    .cat-id { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; }
+    .cat-actions { display: flex; gap: 0.5rem; }
+
+    /* ── ADD FORM ── */
+    .add-form { display: flex; gap: 0.8rem; align-items: flex-end; flex-wrap: wrap; }
+    .add-form .ff { display: flex; flex-direction: column; gap: 0.3rem; }
+    .add-form label { font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .add-form input, .add-form select { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; padding: 0.6rem 0.9rem; background: var(--white); border: 1px solid var(--canvas); color: var(--ink); outline: none; border-radius: 2px; transition: border-color 0.2s; min-width: 180px; }
+    .add-form input:focus, .add-form select:focus { border-color: var(--blue); }
+    .add-form select { min-width: 140px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23888480' stroke-width='1.4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.8rem center; padding-right: 2rem; }
+
+    /* ── DESIGN GRID ── */
+    .d-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .d-card { background: var(--white); border: 1px solid var(--canvas); border-radius: 2px; overflow: hidden; }
+    .d-card-img { aspect-ratio: 1/0.85; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; position: relative; overflow: hidden; }
+    .d-card-img img { width: 100%; height: 100%; object-fit: cover; }
+    .d-chip { position: absolute; top: 7px; left: 7px; font-family: 'DM Mono', monospace; font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.14rem 0.4rem; border-radius: 1px; border: 1px solid; }
+    .d-chip.spring { background: #d6f0cc; color: #3a7a35; border-color: #7db87a; }
+    .d-chip.summer { background: #ffe5c2; color: #a04a10; border-color: #e8924a; }
+    .d-chip.autumn { background: #f5d5b5; color: #7a3010; border-color: #b5622a; }
+    .d-chip.winter { background: var(--air); color: var(--blue); border-color: var(--blue); }
+    .d-card-body { padding: 0.8rem; border-top: 1px solid var(--canvas); }
+    .d-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; color: var(--black); }
+    .d-card-meta { font-family: 'DM Mono', monospace; font-size: 0.58rem; color: var(--muted); margin-top: 0.12rem; letter-spacing: 0.04em; }
+    .d-card-actions { display: flex; gap: 0.4rem; margin-top: 0.7rem; }
+
+    /* ── MODAL ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 800; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--white); width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; border: 1px solid var(--canvas); border-radius: 2px; }
+    .modal-head { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--canvas); display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.08em; color: var(--black); }
+    .modal-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--muted); }
+    .modal-body { padding: 1.5rem; }
+    .modal-body .mf { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+    .modal-body label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .modal-body input, .modal-body select, .modal-body textarea { font-family: 'DM Sans', sans-serif; font-size: 0.87rem; padding: 0.65rem 0.9rem; background: var(--off); border: 1px solid var(--canvas); color: var(--ink); outline: none; border-radius: 2px; transition: border-color 0.2s; width: 100%; }
+    .modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus { border-color: var(--blue); background: #fff; }
+    .modal-body select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23888480' stroke-width='1.4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.8rem center; padding-right: 2rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--canvas); display: flex; gap: 0.8rem; justify-content: flex-end; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: #fff; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.08em; padding: 0.8rem 1.4rem; border-radius: 2px; border-left: 3px solid var(--orange); z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* tag */
+    .badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; padding: 0.16rem 0.5rem; border-radius: 1px; border: 1px solid; }
+    .badge-blue { border-color: var(--blue); color: var(--blue); background: var(--air); }
+    .badge-or { border-color: var(--orange); color: var(--orange); background: #fde8da; }
+
+    /* link */
+    .go-link { display: inline-flex; align-items: center; gap: 0.5rem; font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; color: var(--orange); text-decoration: none; transition: opacity 0.2s; }
+    .go-link:hover { opacity: 0.7; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">MARYLIN<span>STUDIO</span></div>
+    <div class="login-sub">Panel de Administración</div>
+    <label>Usuario</label>
+    <input type="text" id="l-user" placeholder="admin" autocomplete="username"/>
+    <label>Contraseña</label>
+    <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Iniciar Sesión →</button>
+    <div class="login-err" id="l-err">Usuario o contraseña incorrectos</div>
+    <div class="login-hint">Usuario: <strong style="color:#888">admin</strong> · Contraseña: <strong style="color:#888">marylin2026</strong></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-txt">MARYLIN<span>STUDIO</span></div>
+      <div class="logo-sub">Admin Panel</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Principal</div>
+      <div class="sb-item active" onclick="showPage('dashboard',this)"><span class="ico">📊</span>Dashboard</div>
+      <div class="sb-section">Contenido</div>
+      <div class="sb-item" onclick="showPage('categories',this)"><span class="ico">🏷️</span>Categorías</div>
+      <div class="sb-item" onclick="showPage('designs',this)"><span class="ico">💅</span>Diseños</div>
+      <div class="sb-section">Sitio</div>
+      <div class="sb-item" onclick="showPage('settings',this)"><span class="ico">⚙️</span>Ajustes</div>
+    </nav>
+    <div class="sb-bottom">
+      <button class="sb-logout" onclick="doLogout()">⟵ Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ─── DASHBOARD ─── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-head">
+        <div><h1>DASH<em>BOARD</em></h1><p>Resumen del sitio Marylin Studio</p></div>
+        <a href="marylinstudio.html" target="_blank" class="go-link">↗ Ver sitio público</a>
+      </div>
+      <div class="stats" id="dash-stats"></div>
+      <div class="panel">
+        <div class="panel-head"><h3>Acceso Rápido</h3></div>
+        <div class="panel-body" style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="showPage('categories',document.querySelector('[onclick*=categories]'))">+ Nueva categoría</button>
+          <button class="btn btn-primary" onclick="openAddDesign()">+ Nuevo diseño</button>
+          <a href="marylinstudio.html" target="_blank" class="btn btn-ghost">↗ Ver sitio</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CATEGORIES ─── -->
+    <div class="page" id="page-categories">
+      <div class="page-head">
+        <div><h1>CATE<em>GORÍAS</em></h1><p>Gestiona las categorías del catálogo</p></div>
+      </div>
+
+      <!-- ADD CATEGORY -->
+      <div class="panel">
+        <div class="panel-head"><h3>Agregar Nueva Categoría</h3></div>
+        <div class="panel-body">
+          <div class="add-form">
+            <div class="ff">
+              <label>Nombre de la categoría</label>
+              <input type="text" id="new-cat-name" placeholder="Ej: Novias, Teens, VIP..."/>
+            </div>
+            <div class="ff">
+              <label>ID (sin espacios)</label>
+              <input type="text" id="new-cat-id" placeholder="Ej: novias"/>
+            </div>
+            <button class="btn btn-orange" onclick="addCategory()">+ Agregar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORY LIST -->
+      <div class="panel">
+        <div class="panel-head"><h3>Categorías Actuales</h3><span id="cat-count" class="badge badge-blue">0</span></div>
+        <div class="panel-body" style="padding:0;">
+          <table class="cat-table">
+            <thead><tr><th>#</th><th>Nombre</th><th>ID</th><th>Diseños</th><th>Acciones</th></tr></thead>
+            <tbody id="cat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── DESIGNS ─── -->
+    <div class="page" id="page-designs">
+      <div class="page-head">
+        <div><h1>DISE<em>ÑOS</em></h1><p>Administra los diseños del catálogo</p></div>
+        <button class="btn btn-primary" onclick="openAddDesign()">+ Nuevo Diseño</button>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1.5rem;" id="d-filters"></div>
+
+      <div class="d-grid" id="d-grid"></div>
+      <p id="d-empty" style="display:none;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.1em;padding:2rem;text-align:center;background:var(--white);border:1px solid var(--canvas);">— No hay diseños en esta categoría —</p>
+    </div>
+
+    <!-- ─── SETTINGS ─── -->
+    <div class="page" id="page-settings">
+      <div class="page-head">
+        <div><h1>AJUS<em>TES</em></h1><p>Configuración del panel de administración</p></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Seguridad</h3></div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:460px;">
+            <div class="add-form" style="display:contents">
+              <div class="ff" style="grid-column:1/-1"><label>Nueva contraseña</label><input type="password" id="new-pass" placeholder="Nueva contraseña"/></div>
+              <div class="ff" style="grid-column:1/-1"><label>Confirmar contraseña</label><input type="password" id="conf-pass" placeholder="Repite la contraseña"/></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:1rem;" onclick="changePass()">Guardar contraseña</button>
+          <p id="pass-msg" style="font-family:'DM Mono',monospace;font-size:.62rem;margin-top:.8rem;letter-spacing:.06em;"></p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Datos</h3></div>
+        <div class="panel-body" style="display:flex;gap:.8rem;flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="resetToDefaults()">Restaurar datos por defecto</button>
+          <button class="btn btn-danger" onclick="clearAll()">Borrar todo</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Acceso al Panel</h3></div>
+        <div class="panel-body">
+          <p style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.07em;line-height:1.9;">
+            URL Admin: <strong style="color:var(--ink)">marylinstudio-admin.html</strong><br/>
+            URL Pública: <strong style="color:var(--ink)">marylinstudio.html</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Add / Edit Design -->
+<div class="modal-overlay" id="design-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">NUEVO DISEÑO</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id"/>
+      <div class="mf"><label>Título del diseño</label><input type="text" id="m-title" placeholder="Ej: Rosa Sakura"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="mf"><label>Categoría</label><select id="m-cat"></select></div>
+        <div class="mf"><label>Temporada</label>
+          <select id="m-season">
+            <option value="spring">🌸 Primavera</option>
+            <option value="summer">☀️ Verano</option>
+            <option value="autumn">🍂 Otoño</option>
+            <option value="winter">❄️ Invierno</option>
+          </select>
+        </div>
+      </div>
+      <div class="mf"><label>Descripción corta</label><input type="text" id="m-sub" placeholder="Ej: Degradado rosa · Flores de cerezo"/></div>
+      <div class="mf"><label>Precio</label><input type="text" id="m-price" placeholder="Ej: desde $15"/></div>
+      <div class="mf"><label>Foto (opcional · URL o subir imagen)</label>
+        <input type="text" id="m-photo-url" placeholder="https://... o deja vacío para diseño automático" style="margin-bottom:.4rem;"/>
+        <input type="file" id="m-photo-file" accept="image/*" onchange="previewPhoto(event)" style="font-size:.8rem;padding:.4rem .6rem;background:var(--off);"/>
+      </div>
+      <div id="m-preview" style="display:none;margin-top:.5rem;border:1px solid var(--canvas);height:100px;overflow:hidden;border-radius:2px;">
+        <img id="m-preview-img" src="" style="width:100%;height:100%;object-fit:cover;"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.5rem;">
+        <div class="mf"><label>Color uña A (hex)</label><input type="color" id="m-nailA" value="#f9c8d8" style="padding:.3rem;height:40px;cursor:pointer;"/></div>
+        <div class="mf"><label>Color uña B (hex)</label><input type="color" id="m-nailB" value="#f4a8c0" style="padding:.3rem;height:40px;cursor:pointer;"/></div>
+      </div>
+      <div class="mf" style="margin-top:.5rem;"><label>Emoji decorativo</label><input type="text" id="m-emoji" placeholder="🌸" maxlength="4"/></div>
+      <div class="mf"><label>¿Tamaño pequeño? (para niñas)</label>
+        <select id="m-small"><option value="false">No (adultas)</option><option value="true">Sí (niñas)</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDesign()">Guardar Diseño</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════ AUTH ══════════════════════════════════ */
+const ADMIN_USER = 'admin';
+let adminPass = localStorage.getItem('ms_pass') || 'marylin2026';
+
+function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  if (u === ADMIN_USER && p === adminPass) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('l-err').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('l-pass').value = '';
+}
+
+function changePass() {
+  const np = document.getElementById('new-pass').value;
+  const cp = document.getElementById('conf-pass').value;
+  const msg = document.getElementById('pass-msg');
+  if (!np) { msg.style.color='var(--red)'; msg.textContent='Ingresa una contraseña.'; return; }
+  if (np !== cp) { msg.style.color='var(--red)'; msg.textContent='Las contraseñas no coinciden.'; return; }
+  adminPass = np;
+  localStorage.setItem('ms_pass', np);
+  msg.style.color='var(--green)'; msg.textContent='✓ Contraseña actualizada correctamente.';
+  toast('Contraseña actualizada');
+}
+
+/* ══════════════════════════════════ DATA ══════════════════════════════════ */
+const DEFAULT_CATS = [
+  { id:'adultas', label:'Adultas' },
+  { id:'ninas',   label:'Niñas'   }
+];
+const DEFAULT_DESIGNS = [
+  { id:1, cat:'adultas', season:'spring', title:'Rosa Sakura',      sub:'Degradado rosa · Flores de cerezo', price:'desde $15', nailA:'#f9c8d8', nailB:'#f4a8c0', emoji:'🌸' },
+  { id:2, cat:'adultas', season:'spring', title:'Verde Menta',      sub:'Pastel fresco · Arte floral',        price:'desde $14', nailA:'#b8e6b0', nailB:'#8fd485', emoji:'🌿' },
+  { id:3, cat:'adultas', season:'spring', title:'Lila Romántico',   sub:'Lila pastel · Acuarela',             price:'desde $16', nailA:'#d4a8e8', nailB:'#c48ad8', emoji:'🌷' },
+  { id:4, cat:'adultas', season:'summer', title:'Mango Tropical',   sub:'Naranja vibrante · Sunset',          price:'desde $14', nailA:'#ffb347', nailB:'#ff8c42', emoji:'🌺' },
+  { id:5, cat:'adultas', season:'summer', title:'Mar Caribe',       sub:'Turquesa · Efecto agua',             price:'desde $15', nailA:'#6cc5e8', nailB:'#3dabda', emoji:'🌊' },
+  { id:6, cat:'adultas', season:'summer', title:'Sol de Verano',    sub:'Amarillo brillante · Girasoles',     price:'desde $14', nailA:'#f5d76e', nailB:'#e8c445', emoji:'🌻' },
+  { id:7, cat:'adultas', season:'autumn', title:'Terracota Chic',   sub:'Terracota intenso · Hojas secas',    price:'desde $15', nailA:'#c8613a', nailB:'#a84828', emoji:'🍁' },
+  { id:8, cat:'adultas', season:'autumn', title:'Oro de Otoño',     sub:'Dorado cálido · Glitter sutil',      price:'desde $18', nailA:'#c9a96e', nailB:'#b8924a', emoji:'✨' },
+  { id:9, cat:'adultas', season:'autumn', title:'Borgoña Elegante', sub:'Vino oscuro · Acabado satinado',     price:'desde $15', nailA:'#8b2252', nailB:'#6d1a3e', emoji:'🍷' },
+  { id:10,cat:'adultas', season:'winter', title:'Azul Glaciar',     sub:'Azul hielo · Copos de nieve',        price:'desde $16', nailA:'#6889c4', nailB:'#4a6fa8', emoji:'❄️' },
+  { id:11,cat:'adultas', season:'winter', title:'Chrome Silver',    sub:'Plateado espejo · Minimalista',      price:'desde $19', nailA:'#d0d0d0', nailB:'#b8b8b8', emoji:'💎' },
+  { id:12,cat:'adultas', season:'winter', title:'Noche Mágica',     sub:'Galaxy · Holográfico',               price:'desde $20', nailA:'#4a2878', nailB:'#2a1a3e', emoji:'✨' },
+  { id:13,cat:'ninas',  season:'spring', title:'Mariposa Rosa',    sub:'Candy pink · Mariposas brillantes',  price:'desde $10', nailA:'#ffb3d9', nailB:'#ff80c0', emoji:'🦋', small:true },
+  { id:14,cat:'ninas',  season:'spring', title:'Estrellita Dorada',sub:'Amarillo sol · Estrellas plateadas', price:'desde $9',  nailA:'#ffe066', nailB:'#ffd426', emoji:'⭐', small:true },
+  { id:15,cat:'ninas',  season:'summer', title:'Delfín Marino',    sub:'Turquesa alegre · Delfines y olas',  price:'desde $10', nailA:'#5dd4e8', nailB:'#38c4dc', emoji:'🐬', small:true },
+  { id:16,cat:'ninas',  season:'summer', title:'Helado de Mango',  sub:'Naranja dulce · Patrones de fruta',  price:'desde $9',  nailA:'#ff9f43', nailB:'#ff6b35', emoji:'🍦', small:true },
+  { id:17,cat:'ninas',  season:'autumn', title:'Calabaza Fiesta',  sub:'Naranja otoñal · Halloween fun',     price:'desde $10', nailA:'#d4884a', nailB:'#c06a2a', emoji:'🎃', small:true },
+  { id:18,cat:'ninas',  season:'winter', title:'Muñeco de Nieve',  sub:'Azul cielo · Muñecos y copos',       price:'desde $10', nailA:'#a8c8f8', nailB:'#80aaef', emoji:'⛄', small:true },
+  { id:19,cat:'ninas',  season:'winter', title:'Unicornio Mágico', sub:'Lila brillante · Purpurina',         price:'desde $12', nailA:'#e8aaee', nailB:'#d480e2', emoji:'🦄', small:true },
+];
+
+let cats    = JSON.parse(localStorage.getItem('ms_cats'))    || JSON.parse(JSON.stringify(DEFAULT_CATS));
+let designs = JSON.parse(localStorage.getItem('ms_designs')) || JSON.parse(JSON.stringify(DEFAULT_DESIGNS));
+let nextId  = Math.max(0, ...designs.map(d=>d.id)) + 1;
+let dFilterCat = 'all';
+
+function save() {
+  localStorage.setItem('ms_cats', JSON.stringify(cats));
+  localStorage.setItem('ms_designs', JSON.stringify(designs));
+}
+
+/* ══════════════════════════════════ NAVIGATION ══════════════════════════════════ */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'categories') renderCategories();
+  if (id === 'designs') { dFilterCat='all'; renderDesigns(); }
+}
+
+/* ══════════════════════════════════ DASHBOARD ══════════════════════════════════ */
+function renderDashboard() {
+  const el = document.getElementById('dash-stats');
+  el.innerHTML = `
+    <div class="stat"><div class="stat-num">${cats.length}</div><div class="stat-label">Categorías</div></div>
+    <div class="stat"><div class="stat-num orange">${designs.length}</div><div class="stat-label">Diseños</div></div>
+    <div class="stat"><div class="stat-num">${designs.filter(d=>d.season==='spring').length}</div><div class="stat-label">🌸 Primavera</div></div>
+    <div class="stat"><div class="stat-num">${designs.filter(d=>d.season==='summer').length}</div><div class="stat-label">☀️ Verano</div></div>
+    <div class="stat"><div class="stat-num">${designs.filter(d=>d.season==='autumn').length}</div><div class="stat-label">🍂 Otoño</div></div>
+    <div class="stat"><div class="stat-num">${designs.filter(d=>d.season==='winter').length}</div><div class="stat-label">❄️ Invierno</div></div>
+  `;
+}
+
+/* ══════════════════════════════════ CATEGORIES ══════════════════════════════════ */
+function renderCategories() {
+  document.getElementById('cat-count').textContent = cats.length;
+  const tb = document.getElementById('cat-tbody');
+  tb.innerHTML = cats.map((c, i) => `
+    <tr>
+      <td><span class="cat-id">${i+1}</span></td>
+      <td><strong>${c.label}</strong></td>
+      <td><span class="cat-id">${c.id}</span></td>
+      <td><span class="badge badge-blue">${designs.filter(d=>d.cat===c.id).length}</span></td>
+      <td>
+        <div class="cat-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editCat('${c.id}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCat('${c.id}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function addCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  let id     = document.getElementById('new-cat-id').value.trim()
+    .toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  if (!name) { toast('Escribe un nombre para la categoría'); return; }
+  if (!id) id = name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+  if (cats.find(c=>c.id===id)) { toast('Ya existe una categoría con ese ID'); return; }
+  cats.push({ id, label: name });
+  save();
+  renderCategories();
+  renderDashboard();
+  document.getElementById('new-cat-name').value = '';
+  document.getElementById('new-cat-id').value = '';
+  toast(`Categoría "${name}" agregada ✓`);
+}
+
+function editCat(id) {
+  const c = cats.find(x=>x.id===id);
+  if (!c) return;
+  const newName = prompt(`Nuevo nombre para "${c.label}":`, c.label);
+  if (!newName || !newName.trim()) return;
+  c.label = newName.trim();
+  save();
+  renderCategories();
+  toast(`Categoría actualizada ✓`);
+}
+
+function deleteCat(id) {
+  const c = cats.find(x=>x.id===id);
+  if (!c) return;
+  const count = designs.filter(d=>d.cat===id).length;
+  if (!confirm(`¿Eliminar la categoría "${c.label}"? Tiene ${count} diseño(s) asociados que también serán eliminados.`)) return;
+  cats = cats.filter(x=>x.id!==id);
+  designs = designs.filter(d=>d.cat!==id);
+  save();
+  renderCategories();
+  renderDashboard();
+  toast(`Categoría eliminada`);
+}
+
+/* ══════════════════════════════════ DESIGNS ══════════════════════════════════ */
+function renderDesigns() {
+  // Filters
+  const df = document.getElementById('d-filters');
+  df.innerHTML = `<button class="btn${dFilterCat==='all'?' btn-primary':' btn-ghost'} btn-sm" onclick="setDFilter('all')">Todas</button>` +
+    cats.map(c=>`<button class="btn${dFilterCat===c.id?' btn-primary':' btn-ghost'} btn-sm" onclick="setDFilter('${c.id}')">${c.label}</button>`).join('');
+
+  const visible = dFilterCat==='all' ? designs : designs.filter(d=>d.cat===dFilterCat);
+  const grid = document.getElementById('d-grid');
+  const empty = document.getElementById('d-empty');
+
+  if (!visible.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const seaName = {spring:'Primavera',summer:'Verano',autumn:'Otoño',winter:'Invierno'};
+  const catName = id => cats.find(c=>c.id===id)?.label || id;
+
+  grid.innerHTML = visible.map(d => {
+    const s=d.small;
+    const nW=s?[12,14,16,14,10]:[17,21,24,21,15];
+    const nH=s?[28,35,39,35,24]:[42,52,58,52,38];
+    const nails=nW.map((w,j)=>`<div class="nail" style="width:${w}px;height:${nH[j]}px;background:${j%2===0?d.nailA:d.nailB};"></div>`).join('');
+    const bg=`linear-gradient(135deg,${d.nailA}44,${d.nailB}22)`;
+    const imgContent = d.photo
+      ? `<img src="${d.photo}" alt="${d.title}" style="width:100%;height:100%;object-fit:cover;"/>`
+      : `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;background:${bg}"><div class="nails-row">${nails}</div><div style="font-size:1.2rem;">${d.emoji||''}</div></div>`;
+    return `<div class="d-card">
+      <div class="d-card-img">${imgContent}<span class="d-chip ${d.season}">${seaName[d.season]||d.season}</span></div>
+      <div class="d-card-body">
+        <div class="d-card-title">${d.title}</div>
+        <div class="d-card-meta">${catName(d.cat)} · ${d.price}</div>
+        <div class="d-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editDesign(${d.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDesign(${d.id})">Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setDFilter(cat) { dFilterCat=cat; renderDesigns(); }
+
+/* Modal helpers */
+function openAddDesign() {
+  document.getElementById('modal-title').textContent='NUEVO DISEÑO';
+  document.getElementById('m-id').value='';
+  document.getElementById('m-title').value='';
+  document.getElementById('m-sub').value='';
+  document.getElementById('m-price').value='';
+  document.getElementById('m-photo-url').value='';
+  document.getElementById('m-photo-file').value='';
+  document.getElementById('m-emoji').value='';
+  document.getElementById('m-nailA').value='#f9c8d8';
+  document.getElementById('m-nailB').value='#f4a8c0';
+  document.getElementById('m-small').value='false';
+  document.getElementById('m-preview').style.display='none';
+  populateCatSelect();
+  document.getElementById('design-modal').classList.add('open');
+}
+
+function editDesign(id) {
+  const d = designs.find(x=>x.id===id);
+  if (!d) return;
+  document.getElementById('modal-title').textContent='EDITAR DISEÑO';
+  document.getElementById('m-id').value=d.id;
+  document.getElementById('m-title').value=d.title;
+  document.getElementById('m-sub').value=d.sub;
+  document.getElementById('m-price').value=d.price;
+  document.getElementById('m-photo-url').value=d.photo||'';
+  document.getElementById('m-photo-file').value='';
+  document.getElementById('m-emoji').value=d.emoji||'';
+  document.getElementById('m-nailA').value=d.nailA||'#f9c8d8';
+  document.getElementById('m-nailB').value=d.nailB||'#f4a8c0';
+  document.getElementById('m-small').value=d.small?'true':'false';
+  if (d.photo) {
+    document.getElementById('m-preview-img').src=d.photo;
+    document.getElementById('m-preview').style.display='block';
+  } else {
+    document.getElementById('m-preview').style.display='none';
+  }
+  populateCatSelect(d.cat);
+  document.getElementById('m-season').value=d.season;
+  document.getElementById('design-modal').classList.add('open');
+}
+
+function populateCatSelect(selected) {
+  const sel = document.getElementById('m-cat');
+  sel.innerHTML = cats.map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${c.label}</option>`).join('');
+}
+
+function previewPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    document.getElementById('m-preview-img').src=ev.target.result;
+    document.getElementById('m-preview').style.display='block';
+    document.getElementById('m-photo-url').value='[file]';
+    document.getElementById('m-photo-url')._fileData=ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+function closeModal() { document.getElementById('design-modal').classList.remove('open'); }
+
+function saveDesign() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) { toast('Escribe un título para el diseño'); return; }
+  const id    = parseInt(document.getElementById('m-id').value)||0;
+  const urlEl = document.getElementById('m-photo-url');
+  let photo   = urlEl._fileData || (urlEl.value!=='[file]'&&urlEl.value ? urlEl.value : '');
+
+  const obj = {
+    id: id||nextId++,
+    cat:    document.getElementById('m-cat').value,
+    season: document.getElementById('m-season').value,
+    title,
+    sub:    document.getElementById('m-sub').value.trim(),
+    price:  document.getElementById('m-price').value.trim()||'Consultar',
+    nailA:  document.getElementById('m-nailA').value,
+    nailB:  document.getElementById('m-nailB').value,
+    emoji:  document.getElementById('m-emoji').value.trim(),
+    small:  document.getElementById('m-small').value==='true',
+    photo
+  };
+
+  if (id) {
+    const idx = designs.findIndex(x=>x.id===id);
+    if (idx>-1) designs[idx]=obj;
+  } else {
+    designs.push(obj);
+  }
+
+  delete urlEl._fileData;
+  save();
+  closeModal();
+  renderDesigns();
+  renderDashboard();
+  toast(`Diseño "${title}" guardado ✓`);
+}
+
+function deleteDesign(id) {
+  const d=designs.find(x=>x.id===id);
+  if (!d) return;
+  if (!confirm(`¿Eliminar el diseño "${d.title}"?`)) return;
+  designs=designs.filter(x=>x.id!==id);
+  save();
+  renderDesigns();
+  renderDashboard();
+  toast(`Diseño eliminado`);
+}
+
+/* ══════════════════════════════════ SETTINGS ══════════════════════════════════ */
+function resetToDefaults() {
+  if (!confirm('¿Restaurar todas las categorías y diseños a los valores por defecto? Se perderán los cambios.')) return;
+  cats    = JSON.parse(JSON.stringify(DEFAULT_CATS));
+  designs = JSON.parse(JSON.stringify(DEFAULT_DESIGNS));
+  nextId  = 20;
+  save();
+  toast('Datos restaurados al estado por defecto');
+}
+
+function clearAll() {
+  if (!confirm('¿Borrar TODOS los diseños y categorías? Esta acción no se puede deshacer.')) return;
+  cats=[]; designs=[];
+  save();
+  toast('Todos los datos eliminados');
+}
+
+/* ══════════════════════════════════ TOAST ══════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+/* ══════════════════════════════════ INIT ══════════════════════════════════ */
+function initApp() {
+  renderDashboard();
+  renderCategories();
+}
+
+// Close modal on overlay click
+document.getElementById('design-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// Enter to login
+document.getElementById('l-pass').addEventListener('keydown', e => {
+  if (e.key==='Enter') doLogin();
+});
+</script>
+</body>
+</html>
